@@ -1,0 +1,125 @@
+config-service:
+  image: ${IMAGE_PREFIX}config-service:${SKATE_VERSION}
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$DOCKER_IP
+  ports:
+   - 8888:8888
+hystrix-dashboard:
+  image: ${IMAGE_PREFIX}hystrix-dashboard:${SKATE_VERSION}
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$DOCKER_IP
+  ports:
+   - 6161:6161
+mysql:
+  image: ${BASE_IMAGE_PREFIX}mysql:5.7
+  ports:
+   - 3306:3306
+  environment:
+   - MYSQL_ROOT_PASSWORD=dbpass
+   - MYSQL_DATABASE=dev
+neo4j:
+  image: ${BASE_IMAGE_PREFIX}neo4j:2.3
+  ports:
+   - 7474:7474
+  environment:
+   - NEO4J_AUTH=none
+mongo:
+  image: ${BASE_IMAGE_PREFIX}mongo:3.3
+  ports:
+   - 27017:27017
+redis:
+  image: ${BASE_IMAGE_PREFIX}redis:3.0
+  ports:
+   - 6379:6379
+user-service:
+  image: ${IMAGE_PREFIX}user-service:${SKATE_VERSION}
+  ports:
+   - 8181:8181
+  links:
+   - mysql
+   - discovery-service
+   - config-service
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$DOCKER_IP
+discovery-service:
+  image: ${IMAGE_PREFIX}discovery-service:${SKATE_VERSION}
+  ports:
+   - 8761:8761
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$DOCKER_IP
+edge-service:
+  image: ${IMAGE_PREFIX}edge-service:${SKATE_VERSION}
+  ports:
+   - 9999:9999
+  links:
+   - user-service
+   - discovery-service
+   - config-service
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$DOCKER_IP
+account-service:
+  image: ${IMAGE_PREFIX}account-service:${SKATE_VERSION}
+  links:
+   - user-service
+   - discovery-service
+   - config-service
+   - mysql
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$DOCKER_IP
+inventory-service:
+  image: ${IMAGE_PREFIX}inventory-service:${SKATE_VERSION}
+  links:
+   - neo4j
+   - discovery-service
+   - config-service
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$DOCKER_IP
+catalog-service:
+  image: ${IMAGE_PREFIX}catalog-service:${SKATE_VERSION}
+  links:
+   - redis
+   - mysql
+   - discovery-service
+   - config-service
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$DOCKER_IP
+order-service:
+  image: ${IMAGE_PREFIX}order-service:${SKATE_VERSION}
+  links:
+   - mongo
+   - discovery-service
+   - config-service
+   - user-service
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$WEB_IP
+shopping-cart-service:
+  image: ${IMAGE_PREFIX}shopping-cart-service:${SKATE_VERSION}
+  links:
+   - mysql
+   - discovery-service
+   - config-service
+   - user-service
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$WEB_IP
+online-store-web:
+  image: ${IMAGE_PREFIX}online-store-web:${SKATE_VERSION}
+  ports:
+   - 8787:8787
+  links:
+   - discovery-service
+   - config-service
+   - user-service
+   - edge-service
+  environment:
+   - SPRING_PROFILES_ACTIVE=docker
+   - DOCKER_IP=$WEB_IP
